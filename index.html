@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IOE TEST 1 – ENGLISH ADVENTURE</title>
+<style>
+/* ===== Giao diện chung ===== */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Comic Sans MS","Segoe UI",system-ui,Arial,sans-serif;background:linear-gradient(160deg,#d9f0ff 0%,#fff6cf 55%,#e8dcff 100%);min-height:100vh;color:#2b3a55}
+#app{max-width:760px;margin:0 auto;padding:14px}
+.card{background:#fff;border-radius:26px;box-shadow:0 8px 24px rgba(70,90,140,.18);padding:20px}
+.screen{display:none}.screen.active{display:block}
+h1{font-size:clamp(26px,6vw,40px);margin:6px 0;color:#5b3fd0;text-align:center;line-height:1.15}
+.sub{text-align:center;color:#2f7d4f;font-weight:bold;margin:4px 0 12px}
+.mascot{font-size:84px;text-align:center;animation:bounce 1.6s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.guide{background:#fff6cf;border-radius:18px;padding:12px 16px;margin:12px 0;font-size:17px;line-height:1.5}
+input[type=text]{width:100%;font-size:22px;padding:14px;border-radius:16px;border:3px solid #9ecbff;outline:none;font-family:inherit;text-align:center}
+input[type=text]:focus{border-color:#5b3fd0}
+.btn{display:block;width:100%;border:none;border-radius:20px;font-family:inherit;font-weight:bold;font-size:22px;padding:16px;cursor:pointer;color:#fff;background:#4c9be8;box-shadow:0 5px 0 #2f78c4;margin-top:12px}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #2f78c4}
+.btn.green{background:#47b36b;box-shadow:0 5px 0 #2e8a4c}
+.btn.purple{background:#8a6be0;box-shadow:0 5px 0 #6247b8}
+.btn.orange{background:#f59f3a;box-shadow:0 5px 0 #c97a1b}
+.btn:disabled{background:#c9cfdb;box-shadow:0 5px 0 #a4abba;cursor:not-allowed}
+.row{display:flex;gap:10px}.row .btn{margin-top:12px}
+/* ===== Màn hình chơi ===== */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold}
+.pill{background:#eef4ff;border-radius:999px;padding:6px 14px;font-size:16px}
+.progress{height:16px;background:#e3e9f5;border-radius:999px;overflow:hidden;margin:10px 0}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,#47b36b,#8be0a3);transition:width .4s}
+.qtype{display:inline-block;background:#e8dcff;color:#5b3fd0;border-radius:999px;padding:4px 12px;font-size:14px;font-weight:bold}
+.qtext{font-size:clamp(22px,5vw,30px);font-weight:bold;margin:10px 0;line-height:1.3}
+.vi{color:#6b7a99;font-size:16px;margin-bottom:6px}
+.illus{display:flex;justify-content:center;margin:8px 0}
+.emoji{font-size:96px;line-height:1.1}
+.swatch{width:130px;height:130px;border-radius:26px;border:4px solid #cfd8ea}
+.illus svg{width:100%;max-width:420px;height:auto}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+@media(max-width:480px){.opts{grid-template-columns:1fr}}
+.opt{display:flex;align-items:center;gap:10px;text-align:left;font-family:inherit;font-size:22px;font-weight:bold;min-height:66px;padding:10px 14px;border-radius:18px;border:3px solid #b9d4f5;background:#f4f9ff;color:#2b3a55;cursor:pointer}
+.opt .ltr{flex:none;width:36px;height:36px;border-radius:50%;background:#4c9be8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px}
+.opt.right{background:#c9f2d5;border-color:#2e8a4c}.opt.right .ltr{background:#2e8a4c}
+.opt.wrong{background:#ffd0d0;border-color:#d64545}.opt.wrong .ltr{background:#d64545}
+.opt.dim{opacity:.55}
+.opt:disabled{cursor:default}
+.fb{min-height:34px;font-size:21px;font-weight:bold;margin-top:12px;text-align:center}
+.fb.ok{color:#2e8a4c}.fb.no{color:#d64545}
+.explain{background:#fff6cf;border-radius:14px;padding:10px 14px;margin-top:8px;font-size:17px;display:none}
+.speak{border:none;background:#eef4ff;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;vertical-align:middle;margin-left:6px}
+/* ===== Kết quả ===== */
+.big{font-size:56px;text-align:center;margin:6px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.stat{background:#f4f9ff;border-radius:16px;padding:12px;text-align:center;font-size:17px}
+.stat b{display:block;font-size:28px;color:#5b3fd0}
+.badge{text-align:center;font-size:28px;font-weight:bold;color:#c97a1b;margin:6px 0}
+.msg{text-align:center;font-size:19px;line-height:1.5}
+.rv{border:3px solid #ffd0d0;border-radius:18px;padding:12px;margin:10px 0;background:#fff8f8}
+.rv .qt{font-weight:bold;font-size:20px}
+.rv .mini .emoji{font-size:48px}.rv .mini .swatch{width:60px;height:60px}.rv .mini svg{max-width:200px}
+.rv .you{color:#d64545;font-weight:bold}.rv .ans{color:#2e8a4c;font-weight:bold}
+/* ===== Hiệu ứng sao ===== */
+.star{position:fixed;top:-30px;font-size:26px;pointer-events:none;z-index:50;animation:fall 1.4s linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(360deg);opacity:.2}}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.modal{position:fixed;inset:0;background:rgba(30,40,70,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal.show{display:flex}
+.modal .box{background:#fff;border-radius:24px;padding:22px;max-width:380px;width:100%;text-align:center;font-size:19px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- MÀN HÌNH MỞ ĐẦU -->
+<section id="s-start" class="screen active">
+  <div class="card">
+    <div class="mascot">🐰</div>
+    <h1>IOE TEST 1 – ENGLISH ADVENTURE</h1>
+    <div class="sub">100 câu hỏi vui • Tiếng Anh lớp 1</div>
+    <div class="guide">📌 <b>Cách chơi:</b> Đọc câu hỏi, chọn đáp án đúng và nhận sao thưởng ⭐. Mỗi câu đúng được 10 điểm!</div>
+    <label for="name" style="font-weight:bold;font-size:18px">Tên của em là gì?</label>
+    <input type="text" id="name" maxlength="30" placeholder="Nhập tên của em..." autocomplete="off">
+    <button class="btn green" id="btnStart">▶ BẮT ĐẦU CHƠI</button>
+  </div>
+</section>
+
+<!-- MÀN HÌNH CHƠI -->
+<section id="s-play" class="screen">
+  <div class="card">
+    <div class="topbar">
+      <span class="pill" id="qNum">Câu 1/100</span>
+      <span class="pill">⭐ <span id="stars">0</span></span>
+      <span class="pill">Điểm: <span id="score">0</span></span>
+      <span class="pill">✅ <span id="cOk">0</span> • ❌ <span id="cNo">0</span></span>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <span class="qtype" id="qType"></span>
+    <div class="qtext"><span id="qText"></span><button class="speak" id="btnSpeak" title="Nghe đọc câu hỏi" aria-label="Nghe đọc câu hỏi">🔊</button></div>
+    <div class="vi" id="qVi"></div>
+    <div class="illus" id="qImg"></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb"></div>
+    <div class="explain" id="explain"></div>
+    <button class="btn green" id="btnNext" disabled>CÂU TIẾP THEO ➜</button>
+    <div class="row">
+      <button class="btn purple" id="btnSound">🔊 Âm thanh: BẬT</button>
+      <button class="btn orange" id="btnHome">🏠 Về màn hình chính</button>
+    </div>
+  </div>
+</section>
+
+<!-- MÀN HÌNH TỔNG KẾT -->
+<section id="s-result" class="screen">
+  <div class="card">
+    <div class="big" id="rEmoji">🏆</div>
+    <h1 id="rName">Chúc mừng!</h1>
+    <div class="badge" id="rBadge"></div>
+    <div class="stats">
+      <div class="stat">Tổng điểm<b id="rScore">0</b>trên 1.000</div>
+      <div class="stat">Tỷ lệ đúng<b id="rRate">0%</b></div>
+      <div class="stat">Số câu đúng<b id="rOk">0</b></div>
+      <div class="stat">Số câu sai<b id="rNo">0</b></div>
+    </div>
+    <div class="msg" id="rMsg"></div>
+    <button class="btn" id="btnReview">🔍 XEM LẠI CÂU SAI</button>
+    <button class="btn green" id="btnAgain">🔄 CHƠI LẠI TỪ ĐẦU</button>
+    <button class="btn orange" id="btnHome2">🏠 VỀ TRANG CHỦ</button>
+  </div>
+</section>
+
+<!-- MÀN HÌNH XEM LẠI -->
+<section id="s-review" class="screen">
+  <div class="card">
+    <h1>🔍 Xem lại câu sai</h1>
+    <div id="rvList"></div>
+    <button class="btn" id="btnBackResult">⬅ Quay lại kết quả</button>
+  </div>
+</section>
+</div>
+
+<!-- HỘP XÁC NHẬN -->
+<div class="modal" id="modal"><div class="box">
+  <div id="mText"></div>
+  <div class="row"><button class="btn green" id="mYes">Đồng ý</button><button class="btn orange" id="mNo">Hủy</button></div>
+</div></div>
+
+<script>
+/* =====================================================
+   DỮ LIỆU 100 CÂU HỎI (đã hiệu chỉnh cho lớp 1)
+   q(dạng, câu hỏi, đáp án đúng, [3 đáp án sai], hình, gợi ý tiếng Việt)
+   Hình: 'e:😀' emoji | 'c:#màu' ô màu | 'n:loại:số' đếm | 'p:vị-trí' hình vị trí
+   ===================================================== */
+const RAW=[];
+function q(type,text,ans,wr,img,vi){RAW.push({type,text,ans,wr,img:img||'',vi:vi||''});}
+/*DATA-START*/
+// --- Colors (10) ---
+q('Look and choose','What color is the sun?','yellow',['blue','green','purple'],'e:☀️','Mặt trời màu gì?');
+q('Look and choose','What color is this?','red',['blue','green','yellow'],'c:#e53935','Red = màu đỏ');
+q('Look and choose','What color is this?','blue',['red','green','black'],'c:#1e88e5','Blue = màu xanh dương');
+q('Look and choose','What color is this?','green',['red','pink','blue'],'c:#43a047','Green = màu xanh lá');
+q('Look and choose','What color is this?','yellow',['red','blue','green'],'c:#fdd835','Yellow = màu vàng');
+q('Look and choose','What color is this?','orange',['green','purple','blue'],'c:#fb8c00','Orange = màu cam');
+q('Look and choose','What color is this?','purple',['orange','yellow','green'],'c:#8e24aa','Purple = màu tím');
+q('Look and choose','What color is this?','pink',['black','green','blue'],'c:#f48fb1','Pink = màu hồng');
+q('Look and choose','What color is this?','black',['white','pink','yellow'],'c:#222222','Black = màu đen');
+q('Look and choose','What color is this?','brown',['yellow','blue','pink'],'c:#795548','Brown = màu nâu');
+// --- Count (10) ---
+q('Count and choose','How many apples?','two',['three','one','four'],'n:apple:2','Đếm số quả táo');
+q('Count and choose','How many stars?','three',['two','four','five'],'n:star:3','Đếm số ngôi sao');
+q('Count and choose','How many balls?','four',['three','five','six'],'n:ball:4','Đếm số quả bóng');
+q('Count and choose','How many apples?','five',['four','six','three'],'n:apple:5','Đếm số quả táo');
+q('Count and choose','How many stars?','six',['five','seven','four'],'n:star:6','Đếm số ngôi sao');
+q('Count and choose','How many balls?','seven',['six','eight','five'],'n:ball:7','Đếm số quả bóng');
+q('Count and choose','How many apples?','eight',['seven','nine','six'],'n:apple:8','Đếm số quả táo');
+q('Count and choose','How many stars?','nine',['eight','ten','seven'],'n:star:9','Đếm số ngôi sao');
+q('Count and choose','How many balls?','ten',['nine','eight','seven'],'n:ball:10','Đếm số quả bóng');
+q('Count and choose','How many stars?','one',['two','three','four'],'n:star:1','Đếm số ngôi sao');
+// --- Numbers (5) ---
+q('Choose the correct word','What number is "eighteen"?','18',['8','12','10'],'','Eighteen = 18');
+q('Choose the correct word','What number is "twelve"?','12',['2','20','21'],'','Twelve = 12');
+q('Choose the correct word','What is "5" in words?','five',['four','six','nine'],'','5 đọc là five');
+q('Choose the correct word','What comes after 4?','5',['3','6','7'],'','Sau số 4 là số 5');
+q('Choose the missing number','1, 2, __, 4','3',['5','6','2'],'','Điền số còn thiếu');
+// --- Days (5) ---
+q('Multiple choice','Which day comes after Sunday?','Monday',['Friday','Wednesday','Saturday'],'','Sau Chủ nhật là thứ Hai');
+q('Multiple choice','Which day comes after Monday?','Tuesday',['Thursday','Friday','Sunday'],'','Sau thứ Hai là thứ Ba');
+q('Multiple choice','Which day comes after Tuesday?','Wednesday',['Friday','Sunday','Monday'],'','Sau thứ Ba là thứ Tư');
+q('Multiple choice','Which day comes after Friday?','Saturday',['Monday','Wednesday','Thursday'],'','Sau thứ Sáu là thứ Bảy');
+q('Multiple choice','Which day comes after Saturday?','Sunday',['Monday','Friday','Tuesday'],'','Sau thứ Bảy là Chủ nhật');
+// --- Months (5) ---
+q('Multiple choice','Which month comes after February?','March',['August','January','April'],'','Sau tháng Hai là tháng Ba');
+q('Multiple choice','Which month comes after April?','May',['February','June','March'],'','Sau tháng Tư là tháng Năm');
+q('Multiple choice','What is the fifth month?','May',['January','November','June'],'','Tháng thứ năm là May');
+q('Multiple choice','What is the first month?','January',['March','June','December'],'','Tháng đầu tiên là January');
+q('Multiple choice','Which month comes after January?','February',['April','August','December'],'','Sau tháng Một là tháng Hai');
+// --- Grammar: am / is / are / have / has / he / she / they (12) ---
+q('Complete the sentence','I ___ a student.','am',['is','are','be'],'','I đi với am');
+q('Complete the sentence','You ___ happy today.','are',['am','is','be'],'','You đi với are');
+q('Complete the sentence','He ___ at home now.','is',['am','are','be'],'','He đi với is');
+q('Complete the sentence','We ___ friends.','are',['am','is','be'],'','We đi với are');
+q('Complete the sentence','She ___ a cat.','has',['have','having','had'],'','She đi với has');
+q('Complete the sentence','I ___ a cat.','have',['has','having','had'],'','I đi với have');
+q('Complete the sentence','They ___ two dogs.','have',['has','having','had'],'','They đi với have');
+q('Choose the correct word','___ she like cats?','Does',['Do','Is','Are'],'','She đi với Does');
+q('Choose the correct word','Tom and Mary are friends. ___ are friends.','They',['We','He','She'],'','Tom và Mary = They (họ)');
+q('Choose the correct word','Tom is a boy. ___ is a boy.','He',['She','They','We'],'','Bạn nam = He');
+q('Choose the correct word','Mary is a girl. ___ is a girl.','She',['He','They','We'],'','Bạn nữ = She');
+q('Choose the correct word','___ is my book. (gần em)','This',['That','Those','These'],'','This = cái này (ở gần)');
+// --- Positions (5) ---
+q('Complete the sentence','The shoes are ___ the bed. (👟 ở dưới giường)','under',['in','next to','on'],'e:🛏️','Under = ở dưới');
+q('Look and choose','The ball is ___ the box.','in',['on','under','next to'],'p:in','In = ở trong');
+q('Look and choose','The ball is ___ the box.','on',['in','under','next to'],'p:on','On = ở trên');
+q('Look and choose','The ball is ___ the box.','next to',['in','on','under'],'p:next','Next to = bên cạnh');
+q('Look and choose','The ball is ___ the table.','under',['on','in','next to'],'p:under','Under = ở dưới');
+// --- Animals & food (16) ---
+q('Look and choose','What is it?','cat',['dog','bird','fish'],'e:🐱','Con mèo');
+q('Look and choose','What is it?','dog',['cat','rabbit','elephant'],'e:🐶','Con chó');
+q('Look and choose','What is it?','rabbit',['cat','fish','butterfly'],'e:🐰','Con thỏ');
+q('Look and choose','What is it?','elephant',['rabbit','dog','cat'],'e:🐘','Con voi');
+q('Look and choose','What is it?','butterfly',['bird','fish','dog'],'e:🦋','Con bướm');
+q('Look and choose','What is it?','fish',['cat','dog','rabbit'],'e:🐟','Con cá');
+q('Look and choose','What is it?','bird',['fish','cat','dog'],'e:🐦','Con chim');
+q('Look and choose','What is it?','apple',['banana','egg','bread'],'e:🍎','Quả táo');
+q('Look and choose','What is it?','banana',['apple','milk','rice'],'e:🍌','Quả chuối');
+q('Look and choose','What is it?','egg',['rice','milk','bread'],'e:🥚','Quả trứng');
+q('Look and choose','What is it?','rice',['egg','apple','banana'],'e:🍚','Cơm / gạo');
+q('Look and choose','What is it?','milk',['bread','egg','apple'],'e:🥛','Sữa');
+q('Look and choose','What is it?','bread',['milk','rice','banana'],'e:🍞','Bánh mì');
+q('Look and choose','What is it?','carrot',['apple','egg','milk'],'e:🥕','Củ cà rốt');
+q('Choose the correct word','What does a rabbit eat?','carrots',['pencils','shoes','cups'],'e:🐰','Thỏ ăn gì?');
+q('Choose the correct word','Which animal can fly?','bird',['fish','cat','dog'],'','Con vật nào biết bay?');
+// --- School (7) ---
+q('Look and choose','What is it?','pencil',['book','ruler','bag'],'e:✏️','Bút chì');
+q('Look and choose','What is it?','book',['pencil','bag','pen'],'e:📖','Quyển sách');
+q('Look and choose','What is it?','school bag',['book','pen','ruler'],'e:🎒','Cặp sách');
+q('Look and choose','What is it?','scissors',['ruler','pen','book'],'e:✂️','Cái kéo');
+q('Look and choose','What is it?','ruler',['pen','book','bag'],'e:📏','Cái thước');
+q('Look and choose','What is it?','school',['house','shop','zoo'],'e:🏫','Trường học');
+q('Choose the correct word','Which one do you use at school?','pen',['bed','sofa','TV'],'','Em dùng cái nào ở trường?');
+// --- Transport, sports, places (4) ---
+q('Look and choose','This transport has two wheels and pedals.','bicycle',['boat','car','plane'],'e:🚲','Xe đạp có hai bánh và bàn đạp');
+q('Choose the correct word','Which sport is played on grass with a round ball?','football',['swimming','skiing','running'],'','Môn thể thao chơi với quả bóng tròn');
+q('Choose the correct word','Where do you buy food?','supermarket',['cinema','gym','zoo'],'','Mua đồ ăn ở đâu?');
+q('Choose the correct word','Where do you save money?','bank',['cinema','museum','park'],'','Gửi tiền ở ngân hàng');
+// --- Clothes (5) ---
+q('Look and choose','What is it?','socks',['shoes','hat','dress'],'e:🧦','Đôi tất');
+q('Look and choose','What is it?','T-shirt',['dress','socks','hat'],'e:👕','Áo phông');
+q('Look and choose','What is it?','dress',['hat','shoes','socks'],'e:👗','Cái váy');
+q('Look and choose','What is it?','shoes',['socks','dress','hat'],'e:👟','Đôi giày');
+q('Choose the correct word','You wear socks on your ___.','feet',['hands','head','nose'],'e:🧦','Mang tất ở bàn chân');
+// --- Feelings (4) ---
+q('Look and choose','How does he feel?','happy',['sad','angry','sleepy'],'e:😊','Vui vẻ');
+q('Look and choose','How does he feel?','sad',['happy','angry','hungry'],'e:😢','Buồn');
+q('Look and choose','How does he feel?','angry',['happy','sad','sleepy'],'e:😠','Tức giận');
+q('Look and choose','How does he feel?','surprised',['sad','happy','sleepy'],'e:😮','Ngạc nhiên');
+// --- Actions (5) ---
+q('Look and choose','What do they do?','run',['swim','sing','sleep'],'e:🏃','Chạy');
+q('Look and choose','What do they do?','swim',['run','sing','sleep'],'e:🏊','Bơi');
+q('Look and choose','What do they do?','sing',['run','swim','sleep'],'e:🎤','Hát');
+q('Look and choose','What do they do?','sleep',['run','swim','sing'],'e:😴','Ngủ');
+q('Look and choose','What do they do?','skate',['swim','fly','sing'],'e:⛸️','Trượt băng');
+// --- Jobs (4) ---
+q('Look and choose','What is his or her job?','teacher',['doctor','cook','police officer'],'e:👩‍🏫','Giáo viên');
+q('Look and choose','What is his or her job?','doctor',['teacher','cook','driver'],'e:👨‍⚕️','Bác sĩ');
+q('Look and choose','What is his or her job?','cook',['teacher','doctor','pilot'],'e:🧑‍🍳','Đầu bếp');
+q('Look and choose','What is his or her job?','police officer',['teacher','doctor','cook'],'e:👮','Cảnh sát');
+// --- Opposites & letters (3) ---
+q('Complete the sentence','Ice is ___.','cold',['hot','red','big'],'e:🧊','Cold = lạnh');
+q('Complete the sentence','The sun is ___.','hot',['cold','blue','small'],'e:☀️','Hot = nóng');
+q('Choose the missing letter','c _ t','a',['e','o','u'],'e:🐱','cat = con mèo');
+/*DATA-END*/
+
+/* ===== Hình minh họa SVG tự vẽ ===== */
+function starPts(cx,cy,r){let p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;p.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));}return p.join(' ');}
+function countSvg(kind,n){
+  let s='<svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+n+' '+kind+'">';
+  const rows=n>5?2:1, perRow=5;
+  for(let i=0;i<n;i++){
+    const r=Math.floor(i/perRow), c=i%perRow;
+    const inRow=(r===0)?Math.min(n,perRow):n-perRow;
+    const x=200+(c-(inRow-1)/2)*70;
+    const y=rows===1?70:38+r*64;
+    if(kind==='apple') s+='<circle cx="'+x+'" cy="'+y+'" r="22" fill="#e53935"/><path d="M'+x+' '+(y-22)+' q2 -10 8 -12" stroke="#6d4c41" stroke-width="3" fill="none"/><ellipse cx="'+(x+10)+'" cy="'+(y-27)+'" rx="8" ry="4" fill="#43a047"/>';
+    else if(kind==='star') s+='<polygon points="'+starPts(x,y,25)+'" fill="#fdd835" stroke="#f59f3a" stroke-width="2"/>';
+    else s+='<circle cx="'+x+'" cy="'+y+'" r="22" fill="#1e88e5"/><path d="M'+(x-22)+' '+y+' q22 -14 44 0" stroke="#fff" stroke-width="3" fill="none"/>';
+  }
+  return s+'</svg>';
+}
+function posSvg(k){
+  let s='<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ball position"><rect x="0" y="140" width="300" height="6" fill="#8bc98f"/>';
+  const ball=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="18" fill="#e53935"/><path d="M'+(x-18)+' '+y+' q18 -10 36 0" stroke="#fff" stroke-width="3" fill="none"/>';
+  if(k==='in') s+='<path d="M100 70 L100 140 L200 140 L200 70" fill="#f5deb3" stroke="#8d5a2b" stroke-width="6"/>'+ball(150,118);
+  if(k==='on') s+='<rect x="110" y="90" width="80" height="50" fill="#d9a066" stroke="#8d5a2b" stroke-width="5"/>'+ball(150,72);
+  if(k==='next') s+='<rect x="60" y="90" width="80" height="50" fill="#d9a066" stroke="#8d5a2b" stroke-width="5"/>'+ball(210,122);
+  if(k==='under') s+='<rect x="85" y="70" width="130" height="12" fill="#d9a066" stroke="#8d5a2b" stroke-width="4"/><rect x="92" y="82" width="10" height="58" fill="#8d5a2b"/><rect x="198" y="82" width="10" height="58" fill="#8d5a2b"/>'+ball(150,120);
+  return s+'</svg>';
+}
+function imgHtml(spec){
+  if(!spec) return '';
+  const [t,a,b]=spec.split(':');
+  if(t==='e') return '<div class="emoji" role="img">'+spec.slice(2)+'</div>';
+  if(t==='c') return '<div class="swatch" style="background:'+spec.slice(2)+'"></div>';
+  if(t==='n') return countSvg(a,parseInt(b,10));
+  if(t==='p') return posSvg(a);
+  return '';
+}
+
+/* ===== Trạng thái trò chơi ===== */
+const TOTAL=100, POINTS=10, LETTERS=['A','B','C','D'];
+let QUESTIONS=[], idx=0, score=0, okCount=0, noCount=0, answered=0, locked=false, wrongList=[], playerName='', soundOn=true, current=null;
+const $=id=>document.getElementById(id);
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function valid(){
+  if(RAW.length!==TOTAL) return false;
+  return RAW.every(r=>r.wr.length===3&&new Set([r.ans].concat(r.wr)).size===4);
+}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo(0,0);}
+
+/* ===== Âm thanh (WebAudio, không cần file ngoài) ===== */
+let ac=null;
+function tone(freqs,dur){
+  if(!soundOn) return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    let t=ac.currentTime;
+    freqs.forEach(f=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+dur);t+=dur*.9;});
+  }catch(e){}
+}
+function confetti(){
+  for(let i=0;i<14;i++){const s=document.createElement('div');s.className='star';s.textContent=i%2?'⭐':'✨';s.style.left=(Math.random()*95)+'vw';s.style.animationDelay=(Math.random()*.4)+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),2000);}
+}
+function speak(){
+  if(!('speechSynthesis' in window)||!current) return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(current.text.replace(/___|_/g,' blank ').replace(/\(.*?\)/g,'').replace(/[^\x00-\x7F]/g,''));u.lang='en-US';u.rate=.8;speechSynthesis.speak(u);}catch(e){}
+}
+
+/* ===== Xác nhận ===== */
+let onYes=null;
+function ask(text,fn){$('mText').textContent=text;onYes=fn;$('modal').classList.add('show');}
+$('mYes').onclick=()=>{$('modal').classList.remove('show');if(onYes)onYes();};
+$('mNo').onclick=()=>$('modal').classList.remove('show');
+
+/* ===== Luồng chơi ===== */
+function startGame(){
+  QUESTIONS=RAW.map((r,i)=>{const opts=shuffle([r.ans].concat(r.wr));return Object.assign({id:i+1,opts:opts,correct:opts.indexOf(r.ans)},r);});
+  idx=0;score=0;okCount=0;noCount=0;answered=0;wrongList=[];locked=false;
+  show('s-play');renderQuestion();
+}
+function updateHud(){
+  $('qNum').textContent='Câu '+(idx+1)+'/'+TOTAL;
+  $('score').textContent=score;$('stars').textContent=okCount;$('cOk').textContent=okCount;$('cNo').textContent=noCount;
+  $('bar').style.width=(answered/TOTAL*100)+'%';
+}
+function renderQuestion(){
+  current=QUESTIONS[idx];locked=false;
+  $('qType').textContent=current.type;
+  $('qText').textContent=current.text;
+  $('qVi').textContent=current.vi?'💡 '+current.vi.replace(/^.*$/,'')+'' :'';
+  $('qVi').textContent='';          // gợi ý tiếng Việt chỉ hiện sau khi trả lời
+  $('qImg').innerHTML=imgHtml(current.img);
+  $('fb').textContent='';$('fb').className='fb';
+  $('explain').style.display='none';
+  $('btnNext').disabled=true;
+  $('btnNext').textContent=(idx===TOTAL-1)?'XEM KẾT QUẢ 🏆':'CÂU TIẾP THEO ➜';
+  $('btnSpeak').style.display=('speechSynthesis' in window)?'inline-block':'none';
+  const box=$('opts');box.innerHTML='';
+  current.opts.forEach((o,i)=>{
+    const b=document.createElement('button');b.className='opt';b.type='button';
+    b.innerHTML='<span class="ltr">'+LETTERS[i]+'</span><span></span>';
+    b.lastChild.textContent=o;
+    b.onclick=()=>choose(i);
+    box.appendChild(b);
+  });
+  updateHud();
+}
+function choose(i){
+  if(locked) return;          // chặn bấm nhiều lần
+  locked=true;
+  const btns=[...$('opts').children];
+  btns.forEach(b=>b.disabled=true);
+  answered++;
+  const right=(i===current.correct);
+  if(right){
+    okCount++;score+=POINTS;
+    btns[i].classList.add('right');
+    $('fb').textContent=(Math.random()<.5?'Excellent! Chính xác! 🎉':'Great job! 🌟');$('fb').className='fb ok';
+    tone([660,880,1100],.15);confetti();
+  }else{
+    noCount++;
+    btns[i].classList.add('wrong');btns[current.correct].classList.add('right');
+    btns.forEach((b,k)=>{if(k!==i&&k!==current.correct)b.classList.add('dim');});
+    $('fb').textContent='Try again! Cố gắng nhé! Đáp án đúng: '+LETTERS[current.correct]+'. '+current.opts[current.correct];$('fb').className='fb no';
+    btns[i].classList.add('shake');tone([300,220],.2);
+    wrongList.push({q:current,chosen:current.opts[i]});
+  }
+  if(current.vi){const e=$('explain');e.textContent='💡 '+current.vi;e.style.display='block';}
+  updateHud();
+  $('btnNext').disabled=false;
+}
+function next(){
+  if(!locked) return;
+  if(idx>=TOTAL-1){finish();return;}
+  idx++;renderQuestion();
+}
+
+/* ===== Tổng kết ===== */
+function tier(s){
+  if(s>=900) return {t:'🏆 English Superstar',e:'🏆',m:'Tuyệt vời quá! Em là siêu sao tiếng Anh!'};
+  if(s>=750) return {t:'🥇 Excellent Learner',e:'🥇',m:'Rất xuất sắc! Em học rất chăm chỉ.'};
+  if(s>=500) return {t:'👍 Good Job',e:'👍',m:'Làm tốt lắm! Luyện thêm một chút nữa là giỏi hơn nữa.'};
+  return {t:'💪 Keep Practising',e:'💪',m:'Em đã cố gắng rất nhiều! Hãy chơi lại để nhớ thêm từ mới nhé.'};
+}
+function finish(){
+  const rate=answered?Math.round(okCount/answered*100):0;
+  const tr=tier(score);
+  $('rEmoji').textContent=tr.e;
+  $('rName').textContent='Chúc mừng '+playerName+'!';
+  $('rBadge').textContent=tr.t;
+  $('rScore').textContent=score.toLocaleString('vi-VN');
+  $('rRate').textContent=rate+'%';$('rOk').textContent=okCount;$('rNo').textContent=noCount;
+  $('rMsg').textContent=playerName+' ơi, '+tr.m;
+  $('btnReview').style.display=wrongList.length?'block':'none';
+  show('s-result');tone([523,659,784,1047],.2);confetti();
+}
+function renderReview(){
+  const box=$('rvList');box.innerHTML='';
+  if(!wrongList.length){box.innerHTML='<p class="msg">Em không sai câu nào. Giỏi quá! 🎉</p>';return;}
+  wrongList.forEach(w=>{
+    const d=document.createElement('div');d.className='rv';
+    const t=document.createElement('div');t.className='qt';t.textContent='Câu '+w.q.id+': '+w.q.text;
+    const m=document.createElement('div');m.className='mini illus';m.innerHTML=imgHtml(w.q.img);
+    const y=document.createElement('div');y.className='you';y.textContent='Em chọn: '+w.chosen;
+    const a=document.createElement('div');a.className='ans';a.textContent='Đáp án đúng: '+w.q.ans;
+    d.append(t,m,y,a);
+    if(w.q.vi){const v=document.createElement('div');v.className='vi';v.textContent='💡 '+w.q.vi;d.appendChild(v);}
+    box.appendChild(d);
+  });
+}
+
+/* ===== Gắn sự kiện ===== */
+$('btnStart').onclick=()=>{
+  const n=$('name').value.trim();
+  if(!n){$('name').focus();$('name').classList.add('shake');setTimeout(()=>$('name').classList.remove('shake'),400);return;}
+  playerName=n;
+  if(!valid()){alert('Lỗi dữ liệu câu hỏi. Vui lòng kiểm tra lại file.');return;}
+  startGame();
+};
+$('name').addEventListener('keydown',e=>{if(e.key==='Enter')$('btnStart').click();});
+$('btnNext').onclick=next;
+$('btnSpeak').onclick=speak;
+$('btnSound').onclick=()=>{soundOn=!soundOn;$('btnSound').textContent='🔊 Âm thanh: '+(soundOn?'BẬT':'TẮT');if(!soundOn&&'speechSynthesis' in window)speechSynthesis.cancel();};
+$('btnHome').onclick=()=>ask('Về màn hình chính? Kết quả đang chơi sẽ bị mất.',()=>show('s-start'));
+$('btnHome2').onclick=()=>show('s-start');
+$('btnAgain').onclick=()=>ask('Chơi lại từ đầu?',startGame);
+$('btnReview').onclick=()=>{renderReview();show('s-review');};
+$('btnBackResult').onclick=()=>show('s-result');
+</script>
+</body>
+</html>
